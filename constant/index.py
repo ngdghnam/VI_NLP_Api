@@ -1,0 +1,2 @@
+CREATE_SUCCESS = "Tạo mới thành công"
+CALCULATE_SUCCESS = "PHÂN TÍCH THÀNH CÔNG"

@@ -1,0 +1,3 @@
+class RequestCrawlDto: 
+    url: str
+    

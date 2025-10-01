@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+pydantic_core
+python-dotenv
+mysql-connector-python
+bcrypt
+beautifulsoup4
+httpx
+requests
+googlesearch-python
+google-api-python-client
+crawl4ai
+python-ipware
+Markdown
+alembic
