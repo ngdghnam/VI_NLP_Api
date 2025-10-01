@@ -15,3 +15,4 @@ crawl4ai
 python-ipware
 Markdown
 alembic
+sqlalchemy

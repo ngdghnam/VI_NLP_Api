@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from .base import BaseEntity
 
-class User(BaseModel): 
-    ip_address: str
+class User(BaseEntity): 
+    __tablename__ = "users"
+    

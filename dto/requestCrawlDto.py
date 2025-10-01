@@ -1,3 +1,3 @@
 class RequestCrawlDto: 
-    url: str
-    
+    query: str
+    number: int
