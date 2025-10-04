@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from middleware import cors_middleware
 from middleware import logging_middleware
+from middleware import ip_middleware
 
 app: FastAPI = FastAPI()
 
@@ -18,9 +19,11 @@ info: dict = {
 
 cors_middleware.add(app)
 logging_middleware.add(app)
-
+ip_middleware.add(app)
+    
 @app.get("/")
-def readRoot(): 
+def readRoot(request: Request): 
+    # client_host = request.state.client_ip
     return {"message": "Wel come to VI NLP AI AGENTS PLATFORM", "Information": info}
 
 

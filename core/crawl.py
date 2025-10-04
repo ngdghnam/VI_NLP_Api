@@ -1,5 +1,11 @@
 import asyncio
-from crawl4ai import AsyncWebCrawler
+from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, DefaultMarkdownGenerator
+
+config = CrawlerRunConfig(
+    markdown_generator=DefaultMarkdownGenerator(
+
+    )
+)
 
 async def main():
     async with AsyncWebCrawler() as crawler:

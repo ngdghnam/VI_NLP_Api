@@ -1,3 +1,6 @@
 class FakeIP: 
-    def create_fake_ip(): 
+    def __init__(self):
+        pass
+
+    def create_fake_ip(self): 
         pass 

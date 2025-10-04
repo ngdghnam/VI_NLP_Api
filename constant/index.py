@@ -1,2 +1,3 @@
 CREATE_SUCCESS = "Tạo mới thành công"
 CALCULATE_SUCCESS = "PHÂN TÍCH THÀNH CÔNG"
+NULL_QUERY = "TỪ KHÓA RỖNG - VUI LÒNG NHẬP LẠI"

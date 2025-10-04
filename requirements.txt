@@ -9,10 +9,11 @@ bcrypt
 beautifulsoup4
 httpx
 requests
-googlesearch-python
 google-api-python-client
 crawl4ai
 python-ipware
 Markdown
 alembic
 sqlalchemy
+selenium 
+pandas

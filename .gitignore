@@ -1,3 +1,5 @@
 .env
 .venv
 logs
+.llm.env
+.goolge-cookie
