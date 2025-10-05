@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from dto.requestCrawlDto import RequestCrawlDto
+from service.crawl_service import crawlService
 
 router = APIRouter(
     prefix="/crawling-data",
@@ -7,5 +8,5 @@ router = APIRouter(
 )
 
 @router.post("/crawl")
-def crawlData(request: RequestCrawlDto):
-    pass
+async def crawlData(request: RequestCrawlDto):
+    return await crawlService.crawlData(request)

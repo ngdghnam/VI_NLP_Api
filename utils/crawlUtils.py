@@ -1,3 +1,4 @@
 class CrawlUtils: 
-    def __init__(self):
-        pass
+    def splitKeywords(self, keywords: str):
+        return keywords.split()
+    

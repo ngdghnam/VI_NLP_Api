@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from middleware import cors_middleware
 from middleware import logging_middleware
 from middleware import ip_middleware
+from controller.crawl_controller import router as crawlRouter
 
 app: FastAPI = FastAPI()
 
@@ -20,6 +21,8 @@ info: dict = {
 cors_middleware.add(app)
 logging_middleware.add(app)
 ip_middleware.add(app)
+
+app.include_router(crawlRouter)
     
 @app.get("/")
 def readRoot(request: Request): 
