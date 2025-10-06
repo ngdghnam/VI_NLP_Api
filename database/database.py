@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 from config.env import settings
@@ -6,6 +6,7 @@ from config.env import settings
 class Database:
     def __init__(self):
         self.DATABASE_URL = (
+            f"{settings.DB_DIALECT}+mysqlconnector://"
             f"{settings.DB_USER}:{settings.DB_PASSWORD}@"
             f"{settings.DB_HOST}:{settings.DB_PORT}/"
             f"{settings.DB_NAME}"
@@ -23,7 +24,7 @@ class Database:
     def check_connection(self):
         try:
             with self.engine.connect() as conn:
-                conn.execute("SELECT 1")
+                conn.execute(text("SELECT 1"))
             print("Database connected successfully!")
             return True
         except OperationalError as e:
