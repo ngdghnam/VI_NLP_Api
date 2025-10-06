@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 class RequestCrawlDto(BaseModel): 
     query: str
-    number: int
+    number: Optional[int] = None

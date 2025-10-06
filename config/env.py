@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     DB_PASSWORD: str  
     GOOGLE_CUSTOM_SEARCH_API_KEY: str 
     DB_DIALECT: str
+    GEMINI_API_KEY: str
 
     class Config:
         env_file = ".env"
