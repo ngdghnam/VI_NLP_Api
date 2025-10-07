@@ -43,3 +43,20 @@ Xem và làm theo hướng dẫn sử dụng tại link sau: [Hướng dẫn cà
 Xem và học theo tutorial: [Docker cơ bản A - Z](https://youtube.com/playlist?list=PLncHg6Kn2JT4kLKJ_7uy0x4AdNrCHbe0n&si=zPy2kzzbNcQMuOyW)
 
 Cài đặt Docker: [Cài đặt & Setup Docker](https://www.docker.com/)
+
+### Bước 5: setup N8N với Docker
+
+Bạn có thể tìm hướng dẫn setup Docker chi tiết tại trang chủ của họ: [Install Docker với n8n](https://docs.n8n.io/hosting/installation/docker/)
+
+Trong project này, chúng ta sẽ đi nhanh. Tại terminal thư mục nguồn, chạy 2 câu lệnh lần lượt sau:
+
+`docker pull docker.n8n.io/n8nio/n8n`
+
+`docker run --name=<your_container_name> -p 5678:5678 -d docker.n8n.io/n8nio/n8n`
+
+Sau khi chạy thành công, truy cập vào `localhost:5678` để chạy n8n.
+
+### Bước 6: Import file và chạy Server
+
+1. Hãy import file json workflow vào trong n8n để chạy kết quả
+2. tại terminal nguồn, chạy câu lệnh: `python -u main.py`
