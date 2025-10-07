@@ -17,3 +17,4 @@ alembic
 sqlalchemy
 selenium 
 pandas
+pyngrok
