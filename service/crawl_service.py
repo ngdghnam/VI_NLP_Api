@@ -40,6 +40,10 @@ class CrawlService:
         results = await asyncio.to_thread(crawl_sync, valid_links)
 
         return {"data": self.crawlUtils.combineResult(results)}
+    
+    def extractToFind(number: int):
+        pass
+
 
 
 session = next(database.get_db())  # Lấy session từ Database class
