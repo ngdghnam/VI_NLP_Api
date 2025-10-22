@@ -66,107 +66,183 @@ Sau khi chạy thành công, truy cập vào `localhost:5678` để chạy n8n.
 Cấu trúc dự án được chia như sau:
 
 server/
-│
+
 ├── **pycache**/ # Python cache files (tự động tạo)
+
 ├── .venv/ # Môi trường ảo Python
+
 │
 ├── alembic/ # Database migration
+
 │ ├── versions/ # Các file migration
+|  
 │ └── env.py # Cấu hình Alembic
 │
+
 ├── config/ # Cấu hình ứng dụng
+|  
 │ ├── **init**.py
+|  
 │ ├── database.py # Cấu hình database
+
 │ ├── settings.py # Cài đặt chung
+
 │ └── security.py # Cấu hình bảo mật
-│
+
 ├── constant/ # Hằng số và enum
+
 │ ├── **init**.py
+|  
 │ ├── status.py # Status codes
+|  
 │ ├── roles.py # User roles
+|  
 │ └── messages.py # Message templates
-│
+
 ├── controller/ # Business logic layer
+|  
 │ ├── **init**.py
+|  
 │ ├── user_controller.py
+|  
 │ ├── auth_controller.py
+|  
 │ └── product_controller.py
-│
+
 ├── core/ # Core functionality
+|  
 │ ├── **init**.py
+|  
 │ ├── security.py # Authentication, JWT
+|  
 │ ├── dependencies.py # FastAPI dependencies
+|  
 │ └── exceptions.py # Custom exceptions
-│
+
 ├── database/ # Database models và schemas
+
 │ ├── **init**.py
+|  
 │ ├── base.py # Base model class
+|  
 │ └── session.py # Database session
-│
+
 ├── decorator/ # Custom decorators
+|  
 │ ├── **init**.py
+|
 │ ├── auth_required.py # Authentication decorator
+|
 │ └── rate_limit.py # Rate limiting decorator
+
 │
 ├── dto/ # Data Transfer Objects
+|  
 │ ├── **init**.py
+|  
 │ ├── user_dto.py # User request/response DTOs
+|  
 │ └── product_dto.py # Product DTOs
+
 │
 ├── html/ # HTML templates
+|  
 │ ├── base.html # Base template
+|  
 │ ├── index.html # Homepage
+|  
 │ └── email/ # Email templates
+|  
 │ └── welcome.html
+
 │
 ├── logs/ # Application logs
+|  
 │ ├── app.log
+|  
 │ └── error.log
+
 │
+
 ├── middleware/ # Middleware functions
+|  
 │ ├── **init**.py
+|  
 │ ├── cors.py # CORS middleware
+|  
 │ ├── logging.py # Request logging
+|  
 │ └── error_handler.py # Error handling
+
 │
 ├── model/ # Database models (ORM)
+|  
 │ ├── **init**.py
+|  
 │ ├── user.py # User model
+|  
 │ ├── product.py # Product model
+|  
 │ └── base.py # Base model
+
 │
 ├── n8n/ # N8N automation workflows
+|  
 │ └── workflows/
+
 │
 ├── prompt/ # AI prompts (nếu dùng AI)
+|  
 │ └── templates/
-│
+
 ├── repository/ # Data access layer
+|  
 │ ├── **init**.py
+|  
 │ ├── user_repository.py
+|  
 │ ├── product_repository.py
+|  
 │ └── base_repository.py
-│
+
 ├── service/ # Business services
+|  
 │ ├── **init**.py
+|  
 │ ├── user_service.py # User business logic
+|  
 │ ├── auth_service.py # Authentication logic
+|  
 │ └── email_service.py # Email sending
+
 │
 ├── spec/ # API specifications
+|  
 │ └── openapi.yaml # OpenAPI/Swagger spec
+
 │
 ├── utils/ # Utility functions
+|  
 │ ├── **init**.py
+|  
 │ ├── helpers.py # Helper functions
+|  
 │ ├── validators.py # Validation functions
+|  
 │ └── formatters.py # Data formatting
-│
+
 ├── .env # Environment variables (không commit)
+
 ├── .env.example # Environment variables template
+
 ├── .gitignore # Git ignore rules
+
 ├── .llm.env # LLM configuration
+
 ├── alembic.ini # Alembic configuration
+
 ├── main.py # Application entry point
+
 ├── README.md # Documentation
+
 └── requirements.txt # Python dependencies
