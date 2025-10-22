@@ -1,0 +1,1049 @@
+{
+  "name": "VI_N8N_Platform_Workflox",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Lấy tất cả items đầu vào\nconst items = $input.all();\n\nconst outputs = items.map(item => {\n  const text = item.json.output || \"\";\n\n  // Các mẫu regex có thể xuất hiện cho title & content\n  const patterns = [\n    { title: /##\\s*Title\\s*([\\s\\S]*?)##\\s*Content/i, content: /##\\s*Content\\s*([\\s\\S]*)/i },\n    { title: /\\*\\*Title\\*\\*\\s*([\\s\\S]*?)\\*\\*Content\\*\\*/i, content: /\\*\\*Content\\*\\*\\s*([\\s\\S]*)/i },\n    { title: /Title\\s*[:\\-–]\\s*([\\s\\S]*?)Content\\s*[:\\-–]/i, content: /Content\\s*[:\\-–]\\s*([\\s\\S]*)/i },\n    { title: /#\\s*Title\\s*([\\s\\S]*?)#\\s*Content/i, content: /#\\s*Content\\s*([\\s\\S]*)/i }\n  ];\n\n  let title = \"\";\n  let content = \"\";\n\n  // Thử qua từng pattern cho đến khi match được\n  for (const p of patterns) {\n    const tMatch = text.match(p.title);\n    const cMatch = text.match(p.content);\n    if (tMatch || cMatch) {\n      title = tMatch ? tMatch[1].trim() : \"\";\n      content = cMatch ? cMatch[1].trim() : \"\";\n      break;\n    }\n  }\n\n  // Nếu vẫn không tìm thấy rõ ràng thì fallback:\n  if (!title && text.includes(\"Title\")) {\n    const parts = text.split(/Content[:\\-–]|\\*\\*Content\\*\\*|##\\s*Content/i);\n    if (parts.length > 1) {\n      const before = parts[0].replace(/^[\\s\\S]*Title[:\\-–]|\\*\\*Title\\*\\*|##\\s*Title/i, \"\").trim();\n      title = before || \"\";\n      content = parts[1].trim();\n    } else {\n      // Nếu không có Content thì lấy đoạn đầu làm title\n      title = text.split(\"\\n\")[0].trim();\n      content = text;\n    }\n  }\n\n  return { json: { title, content } };\n});\n\nreturn outputs;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        944
+      ],
+      "id": "4ca16aa7-7491-4859-8664-3c1a1cc00353",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "content": "## 3. TRANS \n**",
+        "height": 516,
+        "width": 620
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        816
+      ],
+      "id": "db33a132-7a9a-424e-8f7f-cec755ee154e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 6. Summary & Visualization Agent\n**  ",
+        "height": 528,
+        "width": 1032,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        816
+      ],
+      "id": "4438d84f-b635-4f2a-93ed-f2638333ee8c",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Code node (JavaScript) – Run Once for All Items\n\nconst rows = [];\n\nfor (const item of items) {\n  // 1) Lấy payload: thường AI Agent1 trả về trong item.json.output\n  let payload = item.json.output ?? item.json;\n\n  // 2) Nếu là chuỗi, bỏ ```json ... ``` rồi parse\n  if (typeof payload === 'string') {\n    let s = payload.trim();\n    if (s.startsWith('```')) {\n      s = s.replace(/^```(?:json)?\\s*/i, '').replace(/```$/,'').trim();\n    }\n    try {\n      payload = JSON.parse(s);\n    } catch (e) {\n      return [{ json: { error: `Cannot parse JSON from previous node: ${e.message}` } }];\n    }\n  }\n\n  // 3) Nếu là 1 object đơn {title, keypoints}, bọc thành mảng\n  if (!Array.isArray(payload) && payload?.title && Array.isArray(payload.keypoints)) {\n    payload = [payload];\n  }\n\n  // 4) Trải phẳng thành 2 cột\n  if (Array.isArray(payload)) {\n    for (const art of payload) {\n      if (!art?.title || !Array.isArray(art.keypoints)) continue;\n      for (const kp of art.keypoints) {\n        rows.push({ json: { title: art.title, keypoint: kp } });\n      }\n    }\n  }\n}\n\n// Luôn trả về dữ liệu để thấy output\nif (rows.length === 0) {\n  return [{ json: { notice: \"No rows built. Check 'item.json.output' structure.\" } }];\n}\nreturn rows;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        1424
+      ],
+      "id": "c4f83466-cbe3-404b-8f72-cd216ef6694a",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Read the following article(s) and generate an output in JSON format.  \nFor each article:  \n- Include the article title.  \n- Extract exactly **5 keypoints**.  \n- Each keypoint must summarize the article’s core ideas.  \n- Each keypoint must be **concise (no longer than 7 words)**.  \n- Do not add numbering, explanations, or extra text.  \n\nFormat strictly as:  \n[\n  {\n    \"title\": \"<{{ $json.title }}>\",\n    \"keypoints\": [\n      \"<keypoint 1>\",\n      \"<keypoint 2>\",\n      \"<keypoint 3>\",\n      \"<keypoint 4>\",\n      \"<keypoint 5>\"\n    ]\n  },\n  ...\n]\n\nArticle:  \n{{ $json.content }}\n",
+        "options": {
+          "systemMessage": "=Read the following article(s) and generate an output in JSON format.  \nFor each article:  \n- Include the article title.  \n- Extract exactly **5 keypoints**.  \n- Each keypoint must summarize the article’s core ideas.  \n- Each keypoint must be **concise (no longer than 7 words)**.  \n- Do not add numbering, explanations, or extra text.  \n\nFormat strictly as:  \n[\n  {\n    \"title\": \"<{{ $json.title }}>\",\n    \"keypoints\": [\n      \"<keypoint 1>\",\n      \"<keypoint 2>\",\n      \"<keypoint 3>\",\n      \"<keypoint 4>\",\n      \"<keypoint 5>\"\n    ]\n  },\n  ...\n]\n\nArticle:  \n{{ $json.content }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        64,
+        1424
+      ],
+      "id": "74ed3184-f8a5-4b03-a120-9b0498b65ee7",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "content": "## 4. SCAN Agent\n**  ",
+        "height": 368,
+        "width": 708,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        1376
+      ],
+      "id": "686a1c36-bce3-4eae-84ba-0306554e2016",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1216,
+        944
+      ],
+      "id": "5e4c867d-8a78-4548-abc8-0514481e4866",
+      "name": "When chat message received",
+      "webhookId": "849e1293-ba51-45b2-b881-3c7d96a65f0a"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a member of an AI Agent Crew designed for automated extraction of insights about virtual idols from Korean digital media.\n\nYour task is to generate 5 searchable, diverse Korean sub-keywords from the input topic below. These keywords must help downstream agents perform tasks like crawling, sentiment analysis, emotion detection, sarcasm recognition, or trend tracking in Korean social media and news.\n\nInstructions:\n- Think across multiple dimensions: behavior, emotion, trust, culture, media format, language cues.\n- Avoid being generic or overly technical.\n- Focus on realistic, high-impact keywords that are likely to appear in Korean online newspaper, posts, comments, or headlines.\n\nInput topic:\n{{ $json.title }}\n{{ $json.keypoint }}\nOutput format:\nOnly return one English sub-keyword per line. ",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        768,
+        1440
+      ],
+      "id": "3e6ef6fc-1b5e-44fe-8a67-d8f1c76786e4",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a native Korean speaker and expert in online fandom culture.\n\nPlease translate the following English keywords into **natural Korean expressions**, using the style that would appear in online communities, K-pop fan discussions, or digital media articles.\n\nOnly return the translated Korean keywords, one per line. Do not include explanations or English text.\n\nKeywords:\n{{$json.output}}\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        1440
+      ],
+      "id": "a0cc2625-b328-4734-9dc5-5b5f9663bb5f",
+      "name": "AI Agent3"
+    },
+    {
+      "parameters": {
+        "content": "## 2. Gen_Sub_keyword Agent\n**",
+        "height": 372,
+        "width": 1164,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        688,
+        1376
+      ],
+      "id": "7a19643f-86d8-4a04-acaf-8ca737bb2a32",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## 5. Insight Generation Agent\n**  ",
+        "height": 512,
+        "width": 904,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        336,
+        816
+      ],
+      "id": "e3fabf21-52af-4698-8304-929559e99b04",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        64,
+        1600
+      ],
+      "id": "c1dcd8e5-9669-4fb6-a8a1-bec9a54ea9bb",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ABj2PHggX6cHoqdH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a skilled HTML report generator. Based on the following insights {{ $json.combined_text }}, return a single, well-structured, and styled HTML document that includes:\n\n1. A complete HTML <head> section with:\n   - <title>Virtual Idol Insights</title>\n   - A <style> tag ensuring good readability (Arial font, light background, spacing, clean layout)\n   - <script> tags that load:\n     - Chart.js from: https://cdn.jsdelivr.net/npm/chart.js\n     - wordcloud2.js from: https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.1.0/wordcloud2.min.js\n\n2. A <body> with:\n   - <h1> titled \"Insights on Virtual Idols\"\n   - <h2> section titled \"Key Insights\" as bullet points\n   - <h2> section titled \"Statistics\" showing each numerical stat as a <p>\n   - <h2> section titled \"Charts\", which includes at least:\n     - Three different Chart.js charts (bar, line, pie) based on data from the insight or dummy values\n     - One pie chart titled \"Sentiment Distribution\" showing values for: Admiration, Curiosity, Trust, Fear, Doubt, Like, Hate\n     - All charts inside <div class=\"chart-container\"> blocks with unique <canvas> elements (e.g., id=\"chart1\", \"chart2\", etc.)\n   - <h2> section titled \"Keyword Cloud\" with a <div id=\"wordcloud\"> styled with minimum size and layout to ensure visibility, such as:\n     - `width: 100%; height: 600px; background-color: #f9f9f9;` for proper display area\n\n3. A <script> block that:\n   - Initializes at least three different Chart.js charts\n   - Renders the \"Sentiment Distribution\" pie chart with dummy values if necessary\n   - Extracts relevant keywords from the insight text using word frequency analysis:\n     - Tokenize the insight, remove stopwords, and count keyword frequencies\n     - Use the top 50 most frequent meaningful keywords\n     - For each keyword, size the word based on its frequency\n     - Assign each keyword a random color for visual diversity\n   - Use `wordcloud2.js` to render the Word Cloud in <div id=\"wordcloud\"> with the following configuration:\n     - `gridSize: 10` for better word spacing\n     - `weightFactor: 12` or higher to ensure large fonts for frequent words\n     - `origin: [300, 300]` to center the word cloud\n     - `rotateRatio: 0.3` and `backgroundColor: '#f9f9f9'` for aesthetic appeal\n     - Ensure rendering is wrapped inside `window.onload` to guarantee DOM readiness\n\n4. Return only a JSON object like:\n{\n  \"chart_html\": \"<html>...</html>\"\n}\n\nEnsure that:\n- The HTML is a valid minified string with no newline escape characters (\\n)\n- Chart.js and WordCloud2 features are rendered properly\n- Use dummy numerical values if exact ones are not provided in the text\n\nThis HTML will be displayed directly in a web browser, so ensure all JS and CSS is embedded and functional.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1440,
+        944
+      ],
+      "id": "d0d814c1-6ab0-4512-97e8-821df0ffccd5",
+      "name": "Visualization Agent"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"chart_html\": \"<html><body><canvas id='myChart'></canvas></body></html>\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1584,
+        1152
+      ],
+      "id": "0cc091a5-f1c6-4e75-86a2-91f58a522d28",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Đổi {{ $json.output }} thành dạng html đẹp không chứa ký tự /n. Chỉ đoạn mã, không cần câu đầu và câu kết. Không cần \"\"```html\\n\"",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1760,
+        944
+      ],
+      "id": "5ac5d44a-8c14-4b3d-94b1-9efcb5c161c6",
+      "name": "Visualization Agent4"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Translate the following Korean text into English.  \nGenerate the output with two sections:\n1. **Title** — a concise English title summarizing the main topic of the text.  \n2. **Content** — a clear and fluent English translation of the entire text below.\n\nOriginal text:\n{{ $json.output }}",
+        "options": {
+          "systemMessage": "Translate the following Korean text into English.  \nGenerate the output with two sections:\n1. **Title** — a concise English title summarizing the main topic of the text.  \n2. **Content** — a clear and fluent English translation of the entire text below.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        944
+      ],
+      "id": "6c83d4f9-deab-487c-bdb7-219e5224e967",
+      "name": "AI Agent4"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        1152
+      ],
+      "id": "18c799cb-751e-486d-9973-48d2f0e907ab",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ABj2PHggX6cHoqdH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI assistant specialized in extracting insights.\nYour task: read the following content ({{ $('Code1').item.json.content }}) and extract 3–5 core insights that summarize the overall picture of the text.\n\nRequirements & Rules:\n\nBase only on the provided text; no external assumptions.\n\nKeep the insights concise, sharp, and non-redundant.\n\nIf there are numbers, data points, names, or dates, preserve them exactly as written.\n\nMerge or refine overlapping points; highlight cause–effect relationships if present.\n\nIf no numerical data exists, just leave the Data section empty (do not invent).\n\nOutput format (Markdown):\n\nINSIGHTS (3–5)\n\n[Insight 1: short sentence capturing the key point]\n\n[Insight 2]\n\n[Insight 3]\n\n[Insight 4, if applicable]\n\n[Insight 5, if applicable]\n\nDATA / FACTS EXTRACTED\n\nFor the DATA section, extract only numerical values, measurable quantities, or factual elements (e.g., years, amounts, statistics) that could be used to create descriptive charts or visualizations.\n\nSource text to analyze:\n{{ $('Code1').item.json.content }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a professional AI assistant specializing in text analysis and insight synthesis.\nYour role is to carefully read the provided text and extract only the most important insights and factual data.\nAlways follow the output structure strictly: first list the INSIGHTS (3–5 key points) and then list the DATA / FACTS EXTRACTED.\nDo not add commentary, explanations, or assumptions beyond what is explicitly written in the text."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        464,
+        944
+      ],
+      "id": "43d4c7e5-d9cd-4c26-aa95-8255e9eb546a",
+      "name": "AI Agent5"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        464,
+        1136
+      ],
+      "id": "b1b65dae-89f6-4578-87ed-468d91fa6c69",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ABj2PHggX6cHoqdH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1) Lấy & chuẩn hoá input text\nlet text = $json.output || $json.text || $json.combined_text || $json.body || \"\";\ntext = String(text)\n  .replace(/^```(?:json)?\\s*/i, \"\")\n  .replace(/```$/i, \"\")\n  .replace(/\\r\\n/g, \"\\n\")\n  .replace(/\\\\n/g, \"\\n\")\n  .trim();\n\n// 2) Tìm tiêu đề 2 phần\nfunction findHeader(haystack, patterns) {\n  for (const p of patterns) {\n    const re = new RegExp(p, \"i\");\n    const m = haystack.match(re);\n    if (m) return { idx: m.index, len: m[0].length };\n  }\n  return null;\n}\nconst insightHdrs = [\"\\\\b##?\\\\s*INSIGHTS\\\\b\", \"\\\\bINSIGHTS\\\\b\", \"\\\\bINSIGHT\\\\b\"];\nconst dataHdrs = [\n  \"\\\\b##?\\\\s*DATA\\\\b\",\n  \"\\\\bDATA\\\\s*/\\\\s*FACTS\\\\s*EXTRACTED\\\\b\",\n  \"\\\\bFACTS\\\\s*EXTRACTED\\\\b\",\n  \"\\\\bDATA\\\\s*/\\\\s*FACTS\\\\b\",\n  \"\\\\bFACTS\\\\b\",\n  \"\\\\bDATA\\\\b\"\n];\n\nconst ih = findHeader(text, insightHdrs);\nconst dh = findHeader(text, dataHdrs);\n\nlet insightsRaw = \"\", dataRaw = \"\";\nif (ih && dh) {\n  if (ih.idx < dh.idx) {\n    insightsRaw = text.slice(ih.idx + ih.len, dh.idx).trim();\n    dataRaw = text.slice(dh.idx + dh.len).trim();\n  } else {\n    dataRaw = text.slice(dh.idx + dh.len, ih.idx).trim();\n    insightsRaw = text.slice(ih.idx + ih.len).trim();\n  }\n} else if (ih) insightsRaw = text.slice(ih.idx + ih.len).trim();\nelse if (dh)  dataRaw    = text.slice(dh.idx + dh.len).trim();\nelse insightsRaw = text; // fallback\n\n// 3) Tách dòng (ưu tiên bullet/đánh số)\nfunction splitLines(section) {\n  if (!section) return [];\n  const items = [];\n  const bulletRe = /(?:^\\s*\\d+\\.\\s+|^\\s*[-•*]\\s+)([\\s\\S]*?)(?=\\n\\s*(?:\\d+\\.\\s+|[-•*]\\s+)|$)/gm;\n  let m;\n  while ((m = bulletRe.exec(section)) !== null) {\n    const t = m[1].replace(/\\s+/g, \" \").trim();\n    if (t) items.push(t);\n  }\n  if (items.length) return items;\n  return section\n    .split(/\\n+/)\n    .map(s => s.replace(/^\\s*(\\d+\\.\\s+|[-•*]\\s+)?/, \"\").trim())\n    .filter(Boolean);\n}\n\nconst insight_lines = splitLines(insightsRaw);\nconst data_lines    = splitLines(dataRaw);\n\n// 4) Trả về 1 item duy nhất với 2 cột riêng biệt\nreturn [{\n  json: {\n    insight_lines,\n    data_lines,\n  }\n}];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        944
+      ],
+      "id": "ad1e9bab-d780-4c9a-a285-43cbbf94c4fc",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== 0) Lấy input =====\nconst items = $input.all();\nlet insightLines = [];\nlet dataLines = [];\n\n// Trường hợp A: đã có hai mảng insight_lines & data_lines từ node trước\nif (items.length && items[0].json) {\n  const j = items[0].json;\n  if (Array.isArray(j.insight_lines) || Array.isArray(j.data_lines)) {\n    insightLines = Array.isArray(j.insight_lines) ? j.insight_lines : [];\n    dataLines    = Array.isArray(j.data_lines)    ? j.data_lines    : [];\n  }\n}\n\n// Trường hợp B: chưa có mảng -> parse từ text (INSIGHTS / DATA)\nif (insightLines.length === 0 && dataLines.length === 0) {\n  let text = items[0]?.json?.output || items[0]?.json?.text ||\n             items[0]?.json?.combined_text || items[0]?.json?.body || \"\";\n\n  text = String(text)\n    .replace(/^```(?:json)?\\s*/i, \"\")\n    .replace(/```$/i, \"\")\n    .replace(/\\r\\n/g, \"\\n\")\n    .replace(/\\\\n/g, \"\\n\")\n    .trim();\n\n  function findHeader(haystack, patterns) {\n    for (const p of patterns) {\n      const re = new RegExp(p, \"i\");\n      const m = haystack.match(re);\n      if (m) return { idx: m.index, len: m[0].length };\n    }\n    return null;\n  }\n\n  const insightHdrs = [\"\\\\b##?\\\\s*INSIGHTS\\\\b\", \"\\\\bINSIGHTS\\\\b\", \"\\\\bINSIGHT\\\\b\"];\n  const dataHdrs = [\n    \"\\\\b##?\\\\s*DATA\\\\b\",\n    \"\\\\bDATA\\\\s*/\\\\s*FACTS\\\\s*EXTRACTED\\\\b\",\n    \"\\\\bFACTS\\\\s*EXTRACTED\\\\b\",\n    \"\\\\bDATA\\\\s*/\\\\s*FACTS\\\\b\",\n    \"\\\\bFACTS\\\\b\",\n    \"\\\\bDATA\\\\b\"\n  ];\n\n  const ih = findHeader(text, insightHdrs);\n  const dh = findHeader(text, dataHdrs);\n\n  let insightsRaw = \"\", dataRaw = \"\";\n  if (ih && dh) {\n    if (ih.idx < dh.idx) {\n      insightsRaw = text.slice(ih.idx + ih.len, dh.idx).trim();\n      dataRaw     = text.slice(dh.idx + dh.len).trim();\n    } else {\n      dataRaw     = text.slice(dh.idx + dh.len, ih.idx).trim();\n      insightsRaw = text.slice(ih.idx + ih.len).trim();\n    }\n  } else if (ih) {\n    insightsRaw = text.slice(ih.idx + ih.len).trim();\n  } else if (dh) {\n    dataRaw = text.slice(dh.idx + dh.len).trim();\n  } else {\n    insightsRaw = text; // fallback\n  }\n\n  function splitLines(section) {\n    if (!section) return [];\n    // bắt bullet: \"1. ...\" hoặc \"- ...\", \"• ...\", \"* ...\"\n    const arr = [];\n    const bulletRe = /(?:^\\s*\\d+\\.\\s+|^\\s*[-•*]\\s+)([\\s\\S]*?)(?=\\n\\s*(?:\\d+\\.\\s+|[-•*]\\s+)|$)/gm;\n    let m;\n    while ((m = bulletRe.exec(section)) !== null) {\n      const t = m[1].replace(/\\s+/g, \" \").trim();\n      if (t) arr.push(t);\n    }\n    if (arr.length) return arr;\n    return section\n      .split(/\\n+/)\n      .map(s => s.replace(/^\\s*(\\d+\\.\\s+|[-•*]\\s+)?/, \"\").trim())\n      .filter(Boolean);\n  }\n\n  insightLines = splitLines(insightsRaw);\n  dataLines    = splitLines(dataRaw);\n}\n\n// ===== 1) Xuất: mỗi số là 1 dòng với 2 cột =====\nconst maxLen = Math.max(insightLines.length, dataLines.length, 1);\nconst out = [];\nfor (let i = 0; i < maxLen; i++) {\n  out.push({\n    json: {\n      insight: insightLines[i] || \"\",\n      data:    dataLines[i] || \"\"\n    }\n  });\n}\n\n// Bảo đảm luôn có output\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        944
+      ],
+      "id": "dd895ca4-d32d-4080-a745-ebde15bdae09",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        1152
+      ],
+      "id": "1014edf1-dce9-4fd3-980e-fbf1b745d548",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ABj2PHggX6cHoqdH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1744,
+        1168
+      ],
+      "id": "dacc81cb-b65c-43fb-b621-a6bc161e344e",
+      "name": "Google Gemini Chat Model4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ABj2PHggX6cHoqdH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        768,
+        1632
+      ],
+      "id": "1cae7671-24f9-4157-8ac4-ee57d5d74b74",
+      "name": "Google Gemini Chat Model5",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ABj2PHggX6cHoqdH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        1632
+      ],
+      "id": "caa6a50b-06c2-4289-b5b5-d37378063217",
+      "name": "Google Gemini Chat Model6",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ABj2PHggX6cHoqdH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://arleen-lawyerlike-christena.ngrok-free.dev/crawling-data/crawl",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"={{ $json.chatInput }}\",\n  \"number\": 5\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1008,
+        944
+      ],
+      "id": "d10a5cae-d270-4add-b960-eea0a8d85747",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a talented data aggregator and analyst who focuses on extracting key insights related to {{$('When chat message received').item.json.chatInput}}.\nYou can read and summarize all the main ideas from the provided data: {{$json.data}}, analyze the numerical information, and generate meaningful recommendations based on your analysis.\nYou are also able to filter out irrelevant or unnecessary information and present the final output in plain text format (not markdown).",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -800,
+        944
+      ],
+      "id": "cf6a11e5-f0cc-49e3-bf28-f1f5b53982e6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -784,
+        1152
+      ],
+      "id": "cff2b4f6-b045-462e-aff4-99fdff283d02",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        1152
+      ],
+      "id": "670fccc8-11db-443b-963d-d57075e67024",
+      "name": "Google Gemini Chat Model7",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ABj2PHggX6cHoqdH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 2. Craw AI Agent\n**  ",
+        "height": 512,
+        "width": 840,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        816
+      ],
+      "id": "dac415fe-a88e-490e-a848-087bc722b52e",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== 1) Lấy toàn bộ item đầu vào =====\nconst items = $input.all();\nif (!items.length) {\n  return [{ json: { combined_text: \"\" } }];\n}\n\n// ===== 2) Gộp tất cả insight & data (nếu có) =====\nlet combinedText = \"\";\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i].json || {};\n  const insight = item.insight || \"\";\n  const data = item.data || \"\";\n\n  // Nếu có insight/data → định dạng đẹp cho AI đọc\n  if (insight || data) {\n    combinedText += `### Insight ${i + 1}:\\n${insight}\\n`;\n    if (data) combinedText += `### Data:\\n${data}\\n`;\n    combinedText += `\\n---\\n\\n`;\n  }\n  // Nếu có title/content (trường hợp input là bài viết)\n  else if (item.title || item.content) {\n    const title = item.title || `Article ${i + 1}`;\n    const content = item.content || \"\";\n    combinedText += `## Title: ${title}\\n## Content:\\n${content}\\n\\n---\\n\\n`;\n  }\n}\n\n// ===== 3) Trả ra 1 item duy nhất =====\nreturn [\n  {\n    json: {\n      combined_text: combinedText.trim()\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        944
+      ],
+      "id": "8c461c8c-c4bf-4b78-9697-8040deaf5fa8",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      html: $json.output // chèn trực tiếp HTML đã tạo\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2096,
+        944
+      ],
+      "id": "0886f310-4fa2-430a-ace6-f9b60190f308",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1680,
+        1440
+      ],
+      "id": "95b8300d-37f7-4810-ac68-ec5a1b2e8afc",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        256,
+        944
+      ],
+      "id": "9c76b852-5a13-4d84-968c-f108d1a07bd0",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy tất cả items đầu vào\nconst items = $input.all();\n\nconst outputs = items.map(item => {\n  const text = item.json.output || \"\";\n\n  // Các mẫu regex có thể xuất hiện cho title & content\n  const patterns = [\n    { title: /##\\s*Title\\s*([\\s\\S]*?)##\\s*Content/i, content: /##\\s*Content\\s*([\\s\\S]*)/i },\n    { title: /\\*\\*Title\\*\\*\\s*([\\s\\S]*?)\\*\\*Content\\*\\*/i, content: /\\*\\*Content\\*\\*\\s*([\\s\\S]*)/i },\n    { title: /Title\\s*[:\\-–]\\s*([\\s\\S]*?)Content\\s*[:\\-–]/i, content: /Content\\s*[:\\-–]\\s*([\\s\\S]*)/i },\n    { title: /#\\s*Title\\s*([\\s\\S]*?)#\\s*Content/i, content: /#\\s*Content\\s*([\\s\\S]*)/i }\n  ];\n\n  let title = \"\";\n  let content = \"\";\n\n  // Thử qua từng pattern cho đến khi match được\n  for (const p of patterns) {\n    const tMatch = text.match(p.title);\n    const cMatch = text.match(p.content);\n    if (tMatch || cMatch) {\n      title = tMatch ? tMatch[1].trim() : \"\";\n      content = cMatch ? cMatch[1].trim() : \"\";\n      break;\n    }\n  }\n\n  // Nếu vẫn không tìm thấy rõ ràng thì fallback:\n  if (!title && text.includes(\"Title\")) {\n    const parts = text.split(/Content[:\\-–]|\\*\\*Content\\*\\*|##\\s*Content/i);\n    if (parts.length > 1) {\n      const before = parts[0].replace(/^[\\s\\S]*Title[:\\-–]|\\*\\*Title\\*\\*|##\\s*Title/i, \"\").trim();\n      title = before || \"\";\n      content = parts[1].trim();\n    } else {\n      // Nếu không có Content thì lấy đoạn đầu làm title\n      title = text.split(\"\\n\")[0].trim();\n      content = text;\n    }\n  }\n\n  return { json: { title, content } };\n});\n\nreturn outputs;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2816,
+        1840
+      ],
+      "id": "0c63edb9-904d-4f28-aac6-691cc88009ec",
+      "name": "Code4"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Translate the following Korean text into English.  \nGenerate the output with two sections:\n1. **Title** — a concise English title summarizing the main topic of the text.  \n2. **Content** — a clear and fluent English translation of the entire text below.\n\nOriginal text:\n{{ $json.output }}",
+        "options": {
+          "systemMessage": "Translate the following Korean text into English.  \nGenerate the output with two sections:\n1. **Title** — a concise English title summarizing the main topic of the text.  \n2. **Content** — a clear and fluent English translation of the entire text below.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        1840
+      ],
+      "id": "942d8b54-8be3-4b63-ad5b-9353b04a70f6",
+      "name": "AI Agent6"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2480,
+        2048
+      ],
+      "id": "0013143e-c773-4e71-98c8-c18acc9bb05e",
+      "name": "Google Gemini Chat Model8",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ABj2PHggX6cHoqdH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://arleen-lawyerlike-christena.ngrok-free.dev/crawling-data/crawl",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"={{ $json.keyword }}\",\n  \"number\": 5\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1872,
+        1840
+      ],
+      "id": "363b0a76-383e-411f-bad8-9ff38be97d27",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a talented data aggregator and analyst who focuses on extracting key insights related to {{$('When chat message received').item.json.chatInput}}.\nYou can read and summarize all the main ideas from the provided data: {{$json.data}}, analyze the numerical information, and generate meaningful recommendations based on your analysis.\nYou are also able to filter out irrelevant or unnecessary information and present the final output in plain text format (not markdown).",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2064,
+        1840
+      ],
+      "id": "a211cc66-6d63-481a-87a8-0eafbfc3058b",
+      "name": "AI Agent7"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        2192,
+        2048
+      ],
+      "id": "9ba0a03a-1876-4fc3-830c-779c82da7658",
+      "name": "Simple Memory1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2048,
+        2048
+      ],
+      "id": "03bb5b69-f6aa-4d49-a35d-c9941fd79b2c",
+      "name": "Google Gemini Chat Model9",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ABj2PHggX6cHoqdH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Visualization Agent": {
+      "main": [
+        [
+          {
+            "node": "Visualization Agent4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        []
+      ]
+    },
+    "Visualization Agent4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent4": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent4",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent5": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent5",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Visualization Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Visualization Agent4",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model7": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Visualization Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        []
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "AI Agent4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "AI Agent7",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent6": {
+      "main": [
+        [
+          {
+            "node": "Code4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model8": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent6",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent7": {
+      "main": [
+        [
+          {
+            "node": "AI Agent6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent7",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model9": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent7",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code4": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "df5d0d94-19f1-495b-8f34-84355105d290",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3c7b79a2a6b29c63dd6315aa3f5ae3ebc510ef3f80b0a91346302a21a5ce328f"
+  },
+  "id": "i4ouPcuaeHAjNYko",
+  "tags": []
+}
