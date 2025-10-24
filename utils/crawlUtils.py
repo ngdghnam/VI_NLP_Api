@@ -28,3 +28,6 @@ class CrawlUtils:
         # Ghép tất cả thành một chuỗi duy nhất
         return "\n".join(combined_text)
     
+    def removeSubWords(sentence: str):
+        pass
+    

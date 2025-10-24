@@ -68,8 +68,6 @@ Cấu trúc dự án được chia như sau:
 ```
 alembic/
     ├── versions/
-        ├── 07afdf842664_create_users_table.py
-        └── c64680d1d99b_added_search_history_entity.py
     ├── env.py
     ├── README
     └── script.py.mako
@@ -113,18 +111,18 @@ repository/
     ├── __init__.py
     ├── base_repository.py
     └── user_repository.py
-service/
+service/ - Các service cần sử dụng
     ├── __init__.py
     ├── analysis_service.py
     └── crawl_service.py
 spec/
-    └── test_modules.py
+    └── test_modules.py - Test dự án
 utils/
-    └── crawlUtils.py
-.env.example
+    └── crawlUtils.py - Các hàm helper khi cào dữ liệu
+.env.example - Mô tả file .env
 .gitignore
-alembic.ini
-main.py
-README.md
-requirements.txt
+alembic.ini - khởi tạo alembic
+main.py - File chính chạy toàn bộ dự án
+README.md - Mô tả dự án
+requirements.txt - Các thư viện cần cho dự án này
 ```

@@ -1,0 +1,321 @@
+<html>
+  <head>
+    <title>Virtual Idol Insights</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f2f5;
+        color: #333;
+        margin: 20px;
+      }
+
+      h1,
+      h2 {
+        color: #1a237e;
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 10px;
+      }
+
+      ul {
+        list-style-type: disc;
+        margin-left: 20px;
+        padding-left: 0;
+      }
+
+      li {
+        margin-bottom: 10px;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: auto;
+        background: #fff;
+        padding: 20px 40px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .stats p {
+        background-color: #e8eaf6;
+        border-left: 5px solid #3f51b5;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+        font-size: 1.1em;
+      }
+
+      .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      #wordcloud {
+        width: 100%;
+        height: 600px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.1.0/wordcloud2.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Insights on Virtual Idols</h1>
+      <h2>Key Insights</h2>
+      <ul>
+        <li>
+          BTS has established a systematic digital ecosystem with the official
+          Big Hit Music website serving as the central hub for all official
+          information and global music distribution.
+        </li>
+        <li>
+          The YouTube channel 'BANGTANTV' is a core content platform for driving
+          high fan engagement through diverse content, including solo projects
+          from members like J-Hope and Jin to maintain fan bonds during the
+          group's hiatus.
+        </li>
+        <li>
+          A strategic shift in communication is underway, moving away from the
+          now-inaccessible @BTS_twt Twitter account towards more systematic and
+          managed platforms like Weverse and the official @bts_bighit account.
+        </li>
+        <li>
+          This integrated multi-platform strategy is designed to maintain brand
+          value and effectively manage the global fandom, especially during the
+          group's hiatus.
+        </li>
+        <li>
+          The key platforms in this integrated ecosystem include the Big Hit
+          Music website, YouTube ('BANGTANTV'), Weverse, and Twitter, each
+          playing a strategic role.
+        </li>
+      </ul>
+      <div class="stats">
+        <h2>Statistics</h2>
+        <p>
+          <strong>'BANGTANTV' YouTube Subscriber Base:</strong> 81.6 million
+        </p>
+        <p><strong>Official Twitter Account:</strong> @bts_bighit</p>
+        <p>
+          <strong>Previously Used Twitter Account:</strong> @BTS_twt (now
+          inaccessible)
+        </p>
+        <p>
+          <strong>Members with Mentioned Solo Projects:</strong> J-Hope, Jin
+        </p>
+      </div>
+      <h2>Charts</h2>
+      <div class="charts-grid">
+        <div class="chart-container">
+          <canvas id="platformEngagementChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="hiatusEngagementTrend"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="sentimentDistribution"></canvas>
+        </div>
+      </div>
+      <h2>Keyword Cloud</h2>
+      <div id="wordcloud"></div>
+    </div>
+    <script>
+      window.onload = function () {
+        const ctx1 = document
+          .getElementById("platformEngagementChart")
+          .getContext("2d");
+        new Chart(ctx1, {
+          type: "bar",
+          data: {
+            labels: [
+              "YouTube (BANGTANTV)",
+              "Weverse",
+              "Official Twitter",
+              "Website",
+            ],
+            datasets: [
+              {
+                label: "Relative Engagement Score",
+                data: [95, 88, 75, 60],
+                backgroundColor: ["#FF0000", "#AD009F", "#3F51B5", "#1A237E"],
+                borderColor: ["#FF0000", "#AD009F", "#3F51B5", "#1A237E"],
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: "Key Platform Engagement",
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+              },
+            },
+          },
+        });
+        const ctx2 = document
+          .getElementById("hiatusEngagementTrend")
+          .getContext("2d");
+        new Chart(ctx2, {
+          type: "line",
+          data: {
+            labels: [
+              "Hiatus Start",
+              "Month 1",
+              "Month 2 (J-Hope Solo)",
+              "Month 3",
+              "Month 4 (Jin Solo)",
+            ],
+            datasets: [
+              {
+                label: "Fan Engagement Trend",
+                data: [70, 65, 82, 78, 90],
+                fill: false,
+                borderColor: "#3f51b5",
+                tension: 0.1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: "Fan Engagement During Hiatus",
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: false,
+              },
+            },
+          },
+        });
+        const ctx3 = document
+          .getElementById("sentimentDistribution")
+          .getContext("2d");
+        new Chart(ctx3, {
+          type: "pie",
+          data: {
+            labels: [
+              "Admiration",
+              "Curiosity",
+              "Trust",
+              "Like",
+              "Doubt",
+              "Fear",
+              "Hate",
+            ],
+            datasets: [
+              {
+                label: "Sentiment %",
+                data: [45, 20, 15, 14, 3, 2, 1],
+                backgroundColor: [
+                  "#4CAF50",
+                  "#2196F3",
+                  "#FFC107",
+                  "#FF9800",
+                  "#9E9E9E",
+                  "#F44336",
+                  "#673AB7",
+                ],
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: "Sentiment Distribution",
+              },
+            },
+          },
+        });
+        const insightText =
+          "BTS has established a systematic digital ecosystem with the official Big Hit Music website serving as the central hub for all official information and global music distribution. 'BANGTANTV' YouTube Subscriber Base: 81.6 million. The YouTube channel 'BANGTANTV' is a core content platform for driving high fan engagement through diverse content, including solo projects from members like J-Hope and Jin to maintain fan bonds during the group's hiatus. A strategic shift in communication is underway, moving away from the now-inaccessible @BTS_twt Twitter account towards more systematic and managed platforms like Weverse and the official @bts_bighit account. This integrated multi-platform strategy is designed to maintain brand value and effectively manage the global fandom, especially during the group's hiatus. Members with Mentioned Solo Projects: J-Hope, Jin. Key Platforms Mentioned: Big Hit Music website, YouTube ('BANGTANTV'), Weverse, Twitter.";
+        const stopwords = [
+          "a",
+          "all",
+          "an",
+          "and",
+          "as",
+          "the",
+          "is",
+          "in",
+          "for",
+          "with",
+          "to",
+          "from",
+          "of",
+          "has",
+          "on",
+          "this",
+          "like",
+          "are",
+          "was",
+          "it",
+          "its",
+          "-",
+          "d",
+        ];
+        const words = insightText
+          .toLowerCase()
+          .replace(/[.,:']/g, "")
+          .split(/\s+/);
+        const freqMap = {};
+        words.forEach((word) => {
+          if (word.length > 2 && !stopwords.includes(word)) {
+            freqMap[word] = (freqMap[word] || 0) + 1;
+          }
+        });
+        const wordList = Object.keys(freqMap)
+          .map((key) => [key, freqMap[key]])
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 50);
+        const colors = [
+          "#1a237e",
+          "#3f51b5",
+          "#2196F3",
+          "#FF0000",
+          "#FF9800",
+          "#AD009F",
+        ];
+        WordCloud(document.getElementById("wordcloud"), {
+          list: wordList,
+          gridSize: 10,
+          weightFactor: 12,
+          fontFamily: "Arial, sans-serif",
+          color: () => colors[Math.floor(Math.random() * colors.length)],
+          rotateRatio: 0.3,
+          backgroundColor: "#f9f9f9",
+          origin: [300, 300],
+        });
+      };
+    </script>
+  </body>
+</html>

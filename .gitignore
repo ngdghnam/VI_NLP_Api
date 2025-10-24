@@ -3,3 +3,4 @@
 logs
 .llm.env
 .goolge-cookie
+__pycache__
