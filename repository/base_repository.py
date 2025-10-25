@@ -86,3 +86,6 @@ class BaseRepository(Generic[T]):
         return self.session.query(self.model).filter(
             self.model.id == entity_id
         ).first() 
+    
+    def find(self):
+        return self.session.query(self.model)

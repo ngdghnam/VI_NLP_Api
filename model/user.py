@@ -12,6 +12,6 @@ class User(BaseEntity):
     name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(100))
     phone_number: Mapped[str] = mapped_column(String(10))
-    message: Mapped[str] = mapped_column(String(255))
+    message: Mapped[str] = mapped_column(String(255), nullable=True)
     search_histories: Mapped[List["SearchHistoryEntity"]] = relationship(back_populates="user")
     
