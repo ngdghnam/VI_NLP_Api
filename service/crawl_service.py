@@ -21,7 +21,8 @@ class CrawlService:
             return {"message": NULL_QUERY}
         
         links = self.search.google_search(request.query, request.number)
-        print("Links:", links)
+        # print("Links:", links)
+
         # Lấy danh sách URL từ dict
         urls = [item["link"] for item in links if item.get("link")]
 
@@ -30,7 +31,6 @@ class CrawlService:
             url for url in urls
             if isinstance(url, str) and url.startswith(("http://", "https://")) and url.strip() != ""
         ]
-
 
         if not valid_links:
             logger.error("Không có URL hợp lệ để crawl")

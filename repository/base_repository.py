@@ -2,9 +2,10 @@ from typing import TypeVar, Generic, List, Optional, Type
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
+from pydantic import BaseModel
 
 # Generic type cho Entity
-T = TypeVar('T')
+T = TypeVar('T', bound=BaseModel)
 
 class BaseRepository(Generic[T]): 
     def __init__(self, session: Session, model: Type[T]):

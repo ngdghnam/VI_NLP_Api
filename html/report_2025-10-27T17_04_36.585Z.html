@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Virtual Idol Insights</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 20px; }
+        h1, h2 { color: #444; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        h1 { text-align: center; }
+        ul { list-style-type: disc; padding-left: 20px; }
+        li { margin-bottom: 10px; line-height: 1.6; }
+        p { background-color: #fff; padding: 10px; border-radius: 5px; border: 1px solid #eee; margin: 5px 0; }
+        #charts-container { display: flex; flex-wrap: wrap; justify-content: space-around; gap: 20px; }
+        .chart-container { width: 45%; min-width: 300px; background-color: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #wordcloud { width: 100%; height: 600px; background-color: #f9f9f9; border: 1px solid #ddd; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.1.0/wordcloud2.min.js"></script>
+</head>
+<body>
+    <h1>Insights on Virtual Idols</h1>
+    
+    <h2>Key Insights</h2>
+    <ul>
+        <li>Sơn Tùng M-TP has successfully transitioned from a singer to a business mogul, establishing M-TP Entertainment to manage his music, branding, and diverse revenue streams.</li>
+        <li>His dominance in the digital space is highlighted by being the first Vietnamese artist to receive a YouTube Diamond Play Button for surpassing 10 million subscribers and cultivating a massive following of over 6.6 million on TikTok.</li>
+        <li>A strategic global approach, including collaborations with international stars like Snoop Dogg and distributing his documentary *Sky Tour: The Movie* on Netflix, has led to unprecedented international chart success on the Billboard Global 200 and Social 50.</li>
+        <li>His diversified business model ensures high revenue through top-tier performance fees, significant YouTube earnings, and major advertising contracts with global brands like Oppo, Shopee, and Gucci.</li>
+    </ul>
+
+    <h2>Statistics</h2>
+    <p><b>YouTube Subscribers:</b> Surpassed 10 million</p>
+    <p><b>TikTok Followers:</b> Over 6.6 million</p>
+    <p><b>YouTube Award:</b> Diamond Play Button</p>
+    <p><b>Agency Name:</b> M-TP Entertainment</p>
+    <p><b>Notable Collaboration:</b> Snoop Dogg</p>
+    <p><b>Documentary Title:</b> Sky Tour: The Movie</p>
+    <p><b>Global Distribution Platform:</b> Netflix</p>
+    <p><b>Global Brands Endorsed:</b> Oppo, Shopee, Gucci</p>
+    <p><b>Chart Achievements:</b> Billboard Global 200 (Excl. U.S.), Social 50</p>
+
+    <h2>Charts</h2>
+    <div id="charts-container">
+        <div class="chart-container"><canvas id="socialFollowersChart"></canvas></div>
+        <div class="chart-container"><canvas id="revenueStreamsChart"></canvas></div>
+        <div class="chart-container"><canvas id="growthChart"></canvas></div>
+        <div class="chart-container"><canvas id="sentimentChart"></canvas></div>
+    </div>
+
+    <h2>Keyword Cloud</h2>
+    <div id="wordcloud"></div>
+
+    <script>
+        window.onload = function() {
+            const insightText = 'Sơn Tùng M-TP has evolved from a singer into a business mogul by establishing his own agency M-TP Entertainment to control his music branding and revenue streams. His success is built on a powerful digital influence evidenced by being the first Vietnamese artist to achieve 10 million YouTube subscribers and amassing over 6.6 million TikTok followers. A deliberate global strategy featuring collaborations with international artists like Snoop Dogg and worldwide distribution on platforms like Netflix has resulted in unprecedented chart success for a Vietnamese artist. His diversified business model secures high revenue through Vietnams top performance fees YouTube earnings and advertising contracts with major global brands. Collaborating Artist Snoop Dogg. Associated Production Team The production team behind BLACKPINKs music videos. Documentary Title Sky Tour The Movie. Distribution Platform Netflix. Global Brands Endorsed Oppo Shopee Gucci. Chart Achievements Billboard Global 200 Excl U.S. Social 50.';
+            const stopWords = new Set(['a', 'an', 'the', 'is', 'in', 'on', 'by', 'to', 'and', 'his', 'her', 'with', 'for', 'from', 'has', 'into', 'own', 'being', 'like', 'behind', 'of', 's', 't', 'm', 'tp', 'over', 'excl', 'u', 's']);
+            const wordCounts = {};
+            const words = insightText.toLowerCase().replace(/[.,:;()]/g, '').split(/\s+/);
+            words.forEach(word => {
+                if (word && !stopWords.has(word)) {
+                    wordCounts[word] = (wordCounts[word] || 0) + 1;
+                }
+            });
+            const keywordList = Object.entries(wordCounts).sort((a, b) => b[1] - a[1]).slice(0, 50);
+
+            new Chart(document.getElementById('socialFollowersChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['YouTube Subscribers', 'TikTok Followers'],
+                    datasets: [{
+                        label: 'Followers (in Millions)',
+                        data: [10, 6.6],
+                        backgroundColor: ['rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)'],
+                        borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: 'Social Media Influence (in Millions)' }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('revenueStreamsChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['Performance Fees', 'YouTube Earnings', 'Brand Endorsements', 'Other'],
+                    datasets: [{
+                        label: 'Revenue %',
+                        data: [40, 25, 30, 5],
+                        backgroundColor: ['rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: 'Estimated Revenue Streams' }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('growthChart'), {
+                type: 'line',
+                data: {
+                    labels: ['2018', '2019', '2020', '2021', '2022'],
+                    datasets: [{
+                        label: 'Subscribers (Millions)',
+                        data: [2, 4.5, 7, 8.5, 10],
+                        fill: false,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: 'Hypothetical Subscriber Growth' }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('sentimentChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['Admiration', 'Curiosity', 'Trust', 'Doubt', 'Like'],
+                    datasets: [{
+                        label: 'Sentiment %',
+                        data: [45, 20, 15, 5, 15],
+                        backgroundColor: ['#4CAF50', '#2196F3', '#FFC107', '#9E9E9E', '#8BC34A'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: 'Sentiment Distribution' }
+                    }
+                }
+            });
+
+            WordCloud(document.getElementById('wordcloud'), {
+                list: keywordList,
+                gridSize: 10,
+                weightFactor: 12,
+                fontFamily: 'Arial, sans-serif',
+                color: () => `hsl(${Math.random() * 360}, 70%, 50%)`,
+                backgroundColor: '#f9f9f9',
+                rotateRatio: 0.3,
+                origin: [300, 300]
+            });
+        };
+    </script>
+</body>
+</html>
