@@ -42,9 +42,7 @@ class CrawlService:
         return {"data": self.crawlUtils.combineResult(results)}
     
     def extractToFind(number: int):
-        pass
-
-
+        return
 
 session = next(database.get_db())  # Lấy session từ Database class
 userRepo = UserRepository(session, User)

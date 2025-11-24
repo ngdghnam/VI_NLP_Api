@@ -10,3 +10,7 @@ router = APIRouter(
 @router.post("/crawl")
 async def crawlData(request: RequestCrawlDto):
     return await crawlService.crawlData(request)
+
+@router.post("/crawl-multiple")
+async def crawlMultipleData():
+    return await crawlService.crawlMultipleData()
