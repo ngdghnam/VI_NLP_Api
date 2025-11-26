@@ -17,23 +17,54 @@ strategy = DFSDeepCrawlStrategy(
 # --- Cấu hình Markdown ---
 markDownConfig = DefaultMarkdownGenerator(
     options={
-        "include_links": False,   # Không lấy link
-        "include_images": False,  # Không lấy ảnh
-        "include_tables": True,   # Giữ lại bảng nếu có
-        "strip_metadata": True,   # Loại bỏ meta
-        "text_only": True,        # Chỉ lấy text
+        "include_links": False,
+        "include_images": False,
+        "include_tables": True,
+        "strip_metadata": True,
+        "text_only": True,
     }
 )
 
+
 config = CrawlerRunConfig(
     markdown_generator=markDownConfig,
+    # Chỉ lấy nội dung từ thẻ article hoặc main
+    css_selector="article, main, .content, .post-content, .article-content",
+    # Loại bỏ các phần không cần thiết
+    excluded_tags=['nav', 'footer', 'header', 'aside', 'script', 'style'],
+    remove_overlay_elements=True,
 )
 
-# --- Crawl 1 URL ---
+import re
+
+def clean_content(markdown: str) -> str:
+    """
+    Làm sạch markdown, loại bỏ links và content không cần thiết
+    """
+    # Loại bỏ markdown links [text](url)
+    cleaned = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', markdown)
+    
+    # Loại bỏ URLs đơn thuần
+    cleaned = re.sub(r'https?://[^\s]+', '', cleaned)
+    
+    # Loại bỏ email
+    cleaned = re.sub(r'\S+@\S+', '', cleaned)
+    
+    # Loại bỏ nhiều dòng trống liên tiếp
+    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+    
+    # Loại bỏ các dòng chỉ chứa ký tự đặc biệt
+    lines = [line for line in cleaned.split('\n') 
+             if line.strip() and not re.match(r'^[\s\-_*#]+$', line)]
+    
+    return '\n'.join(lines).strip()
+
 async def crawl_one(url: str):
-    async with AsyncWebCrawler() as crawler:
+    async with AsyncWebCrawler(config=browser_config) as crawler:
         result = await crawler.arun(url, config=config)
-        return result.markdown or ""
+        raw_markdown = result.markdown or ""
+        # Làm sạch content
+        return clean_content(raw_markdown)
     
 # --- Cào nhiều URL ---
 async def crawl_all(urls: list[str]):
