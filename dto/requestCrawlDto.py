@@ -6,3 +6,6 @@ class RequestCrawlDto(BaseModel):
 
 class MultipleKeywordsDto(BaseModel):
     keywords: list[str]
+
+class UrlDto(BaseModel):
+    url: str

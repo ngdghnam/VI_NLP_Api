@@ -2,6 +2,7 @@ import asyncio
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, DefaultMarkdownGenerator
 from crawl4ai.async_configs import BrowserConfig, CrawlerRunConfig
 from crawl4ai.deep_crawling import DFSDeepCrawlStrategy
+import re
 
 # --- Cấu hình trình duyệt ---
 browser_config = BrowserConfig(verbose=True)
@@ -35,7 +36,6 @@ config = CrawlerRunConfig(
     remove_overlay_elements=True,
 )
 
-import re
 
 def clean_content(markdown: str) -> str:
     """
@@ -92,7 +92,8 @@ def crawl_sync(urls: list[str]):
 async def main(url):
     async with AsyncWebCrawler() as crawler:
         result = await crawler.arun(url)
-        print(result.markdown) 
+        # print(result.markdown)
+        return result 
 
 if __name__ == "__main__":
     lstUrls = [

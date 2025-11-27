@@ -18,9 +18,14 @@ class SearchingGoogle:
 
 if __name__ == "__main__":
     searchingGoogle = SearchingGoogle()
-    search_results = searchingGoogle.google_search("Son Tung MTP")
+    # Test tìm kiếm trang 1
+    print("=== TRANG 1 ===")
+    search_results = searchingGoogle.google_search("Son Tung MTP", num_results=5)
     for item in search_results:
-        # print(f"Title: {item['title']}")
-        # print(f"Link: {item['link']}")
-        # print("-" * 20)
+        print(item)
+    
+    print("\n=== TRANG 2 ===")
+    # Test tìm kiếm trang 2 (bắt đầu từ kết quả thứ 6)
+    search_results = searchingGoogle.google_search("Son Tung MTP", num_results=5)
+    for item in search_results:
         print(item)

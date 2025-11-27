@@ -1,4 +1,4 @@
-from dto.requestCrawlDto import RequestCrawlDto, MultipleKeywordsDto
+from dto.requestCrawlDto import RequestCrawlDto, MultipleKeywordsDto, UrlDto
 from repository.user_repository import UserRepository
 from core.search_google import SearchingGoogle
 from constant.index import NULL_QUERY
@@ -7,7 +7,7 @@ from config.logger import logger
 from database.database import database
 from model.user import User
 import asyncio
-from core.crawl import crawl_sync
+from core.crawl import crawl_sync, crawl_one
 
 class CrawlService: 
     def __init__(self, userRepo: UserRepository, search: SearchingGoogle, crawlUtils: CrawlUtils):
@@ -16,9 +16,15 @@ class CrawlService:
         self.crawlUtils = crawlUtils 
         self.crawled_urls = set()
 
+    async def crawlFromSpecificURL(self, data: UrlDto):
+        if data.url == "":
+            return {"message": NULL_QUERY}
+
+        res = await crawl_one(data.url)
+        return res
+
     async def crawlData(self, request: RequestCrawlDto, skip_duplicates: bool = True):
         if request.query == "":
-            logger.error("Không thể tìm kiếm khi không có từ khóa")
             return {"message": NULL_QUERY}
         
         links = self.search.google_search(request.query, request.number)
@@ -80,7 +86,7 @@ class CrawlService:
             # result["data"] là string từ combineResultBase
             if result.get("data"):
                 # Thêm header keyword vào đầu markdown
-                keyword_section = f"\n\n{'='*80}\n## KEYWORD: {keyword}\n{'='*80}\n\n"
+                keyword_section = f"\n\n{'='*10}\n## KEYWORD: {keyword}\n{'='*10}\n\n"
                 all_results.append(keyword_section + result["data"])
         
         if not all_results:
@@ -89,7 +95,8 @@ class CrawlService:
         
         # Gộp tất cả kết quả thành một chuỗi markdown
         combined_markdown = "\n".join(all_results)
-        
+        self.crawled_urls.clear()
+
         return {
             "message": f"Đã crawl thành công từ {len(data.keywords)} keywords",
             "keywords": data.keywords,
