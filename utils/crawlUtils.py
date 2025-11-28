@@ -1,4 +1,6 @@
 import re
+from config.logger import logger 
+from urllib.parse import urlparse
 class CrawlUtils: 
     def splitKeywords(self, keywords: str):
         return keywords.split()
@@ -124,3 +126,23 @@ class CrawlUtils:
     def removeSubWords(sentence: str):
         pass
     
+    def is_valid_url(self, url: str) -> bool:
+        """
+        Kiểm tra URL có hợp lệ và không phải PDF
+        """
+        if not isinstance(url, str) or not url.startswith(("http://", "https://")):
+            return False
+        
+        # Loại bỏ URLs có extension file không mong muốn
+        parsed = urlparse(url.lower())
+        path = parsed.path
+        
+        # Danh sách extensions cần bỏ qua
+        skip_extensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', 
+                          '.zip', '.rar', '.exe', '.dmg', '.pkg']
+        
+        if any(path.endswith(ext) for ext in skip_extensions):
+            logger.info(f"Bỏ qua URL với file extension: {url}")
+            return False
+        
+        return True
