@@ -11,8 +11,8 @@ class SearchingGoogle:
         self.service = build("customsearch", "v1", developerKey=self.apiKey)
 
 
-    def google_search(self, query, num_results=10):
-        result = self.service.cse().list(q=query, cx=self.cseId, num=num_results).execute()
+    def google_search(self, query, num_results=10, start=1):
+        result = self.service.cse().list(q=query, cx=self.cseId, num=num_results, start=start).execute()
         items = result.get('items', [])
         return [{'title': item.get('title', ''), 'link': item.get('link', '')} for item in items]
 

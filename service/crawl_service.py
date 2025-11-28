@@ -14,9 +14,11 @@ class CrawlService:
         self.userRepo = userRepo
         self.search = search
         self.crawlUtils = crawlUtils 
-        self.crawled_urls = set()
+        # self.crawled_urls = set()
 
     async def crawlFromSpecificURL(self, data: UrlDto):
+
+
         if data.url == "":
             return {"message": NULL_QUERY}
 
@@ -24,38 +26,78 @@ class CrawlService:
         return res
 
     async def crawlData(self, request: RequestCrawlDto, skip_duplicates: bool = True):
+        # Tạo set mới cho mỗi request thay vì dùng self.crawled_urls
+        crawled_urls = set()
+
         if request.query == "":
             return {"message": NULL_QUERY}
         
-        links = self.search.google_search(request.query, request.number)
-        # Lấy danh sách URL từ dict
-        urls = [item["link"] for item in links if item.get("link")]
 
-        # Lọc URL hợp lệ
-        valid_links = [
-            url for url in urls
-            if isinstance(url, str) and url.startswith(("http://", "https://")) and url.strip() != ""
-        ]
+        # Số lượng kết quả mong muốn
+        target_count = request.number
+        valid_results = []
+        start_index = 1
+        max_start = 91  # Google CSE giới hạn 100 kết quả tối đa
 
-        # Lọc bỏ URLs đã crawl (nếu bật skip_duplicates)
-        if skip_duplicates:
-            new_links = [url for url in valid_links if url not in self.crawled_urls]
-            logger.info(f"Tìm thấy {len(valid_links)} URLs, {len(new_links)} URLs mới")
-            valid_links = new_links
+        while len(valid_results) < target_count and start_index <= max_start:
 
-        if not valid_links:
-            logger.warning("Không có URL mới để crawl")
-            return {"message": "Không có URL mới để crawl", "data": []}
+            remaining = target_count - len(valid_results)
+            num_to_fetch = min(10, remaining)  # Google CSE max = 10
+                    
+            links = self.search.google_search(request.query, num_to_fetch, start=start_index)
+
+            if not links:
+                logger.warning(f"Không còn kết quả từ Google")
+                break
+
+            # Lấy danh sách URL từ dict
+            urls = [item["link"] for item in links if item.get("link")]
+
+            # Lọc URL hợp lệ
+            valid_links = []
+
+            for url in urls:
+                # Kiểm tra URL có hợp lệ không (không phải file download)
+                if not self.crawlUtils.is_valid_url(url):
+                    continue
+                
+                # Kiểm tra format cơ bản
+                if isinstance(url, str) and url.strip() != "":
+                    valid_links.append(url)
+
+            # Lọc bỏ URLs đã crawl (nếu bật skip_duplicates)
+            if skip_duplicates:
+                new_links = [url for url in valid_links if url not in crawled_urls]
+                logger.info(f"Tìm thấy {len(valid_links)} URLs, {len(new_links)} URLs mới")
+                valid_links = new_links
+
+            if not valid_links:
+                logger.warning("Không có URL mới để crawl")
+                start_index += 10
+                # return {"message": "Không có URL mới để crawl", "data": []}
+            
+            # Chạy crawl trong thread
+            results = await asyncio.to_thread(crawl_sync, valid_links)
+            crawled_urls.update(valid_links)
+
+            for result in results:
+                content = result.get("content", "").strip()
+                if content:  # Chỉ thêm kết quả có nội dung
+                    valid_results.append(result)
+                    if len(valid_results) >= target_count:
+                        break
+
+            if len(valid_results) >= target_count:
+                break
+                
+            start_index += 10
         
-        # Chạy crawl trong thread
-        results = await asyncio.to_thread(crawl_sync, valid_links)
-
-        # Lưu URLs đã crawl
-        if skip_duplicates:
-            self.crawled_urls.update(valid_links)
+        if not valid_results:
+            logger.warning("Không crawl được nội dung hợp lệ nào")
+            return {"message": "Không crawl được nội dung hợp lệ", "data": []}
 
         # Trả về mảng các object thay vì string
-        return {"data": self.crawlUtils.combineResultBase(results)}
+        return {"data": self.crawlUtils.combineResultBase(valid_results[:target_count])}
     
     def extractToFind(number: int):
         return
@@ -69,33 +111,61 @@ class CrawlService:
             return {"message": "Danh sách keywords không được để trống", "data": []}
         
         all_results = []
+        successful_keywords = []
+
+        tasks = [self.crawlData(RequestCrawlDto(query=k, number=5)) for k in data.keywords]
+        results = await asyncio.gather(*tasks)
         
         # Crawl từng keyword
-        for keyword in data.keywords:
-            logger.info(f"Đang crawl keyword: {keyword}")
+        # for keyword in data.keywords:
+        #     logger.info(f"Đang crawl keyword: {keyword}")
             
-            # Tạo RequestCrawlDto cho từng keyword
-            request = RequestCrawlDto(
-                query=keyword,
-                number=10
-            )
+        #     # Tạo RequestCrawlDto cho từng keyword
+        #     request = RequestCrawlDto(
+        #         query=keyword,
+        #         number=5
+        #     )
             
-            # Gọi hàm crawlData cho từng keyword
-            result = await self.crawlData(request, skip_duplicates=True)
+        #     # Gọi hàm crawlData cho từng keyword
+        #     result = await self.crawlData(request, skip_duplicates=True)
             
-            # result["data"] là string từ combineResultBase
+        #     # result["data"] là string từ combineResultBase
+        #     if result.get("data"):
+        #         # Thêm header keyword vào đầu markdown
+        #         keyword_section = f"\n{'='*5}\n## KEYWORD: {keyword}\n{'='*5}\n"
+        #         all_results.append(keyword_section + result["data"])
+        
+         # Xử lý kết quả từng keyword
+        for i, (keyword, result) in enumerate(zip(data.keywords, results)):
+            # Kiểm tra nếu có exception
+            if isinstance(result, Exception):
+                logger.error(f"Lỗi khi crawl keyword '{keyword}': {str(result)}")
+                continue
+            
+            # Kiểm tra nếu có data
             if result.get("data"):
-                # Thêm header keyword vào đầu markdown
-                keyword_section = f"\n\n{'='*10}\n## KEYWORD: {keyword}\n{'='*10}\n\n"
+                logger.info(f"Keyword '{keyword}': crawl thành công")
+                
+                # Thêm header cho keyword
+                keyword_section = f"\n{'='*50}\n## KEYWORD: {keyword}\n{'='*50}\n"
                 all_results.append(keyword_section + result["data"])
+                successful_keywords.append(keyword)
+            else:
+                logger.warning(f"Keyword '{keyword}': không có dữ liệu")
         
         if not all_results:
-            logger.warning("Không có dữ liệu nào được crawl")
-            return {"message": "Không tìm thấy dữ liệu cho các keywords", "data": ""}
+            logger.warning("Không có dữ liệu nào được crawl thành công")
+            return {
+                "message": "Không tìm thấy dữ liệu cho các keywords", 
+                "data": ""
+            }
+
+        # if not all_results:
+        #     logger.warning("Không có dữ liệu nào được crawl")
+        #     return {"message": "Không tìm thấy dữ liệu cho các keywords", "data": ""}
         
         # Gộp tất cả kết quả thành một chuỗi markdown
         combined_markdown = "\n".join(all_results)
-        self.crawled_urls.clear()
 
         return {
             "message": f"Đã crawl thành công từ {len(data.keywords)} keywords",
